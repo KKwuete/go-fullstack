@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const app = express();
+const Thing = require('./models/Thing');
 
 mongoose.connect('mongodb+srv://Lacervel:marzou@go-fullstack.xlayt.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
     { useNewUrlParser: true,
@@ -21,40 +22,37 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 
 app.post('/api/stuff', ((req, res, next) => {
-    console.log(req.body);
-    res.status(201).json({
-        message: 'Objet crée'
-    })
-}))
+    delete req.body._id;
+    const thing = new Thing({
+        ...req.body
+    });
+    thing.save()
+        .then(() => res.status(201).json({message:'Objet enregistré'}))
+        .catch(error => res.status(400).json({error}));
+}));
 
-app.use('/api/stuff', ((req, res, next) => {
+app.put('/api/stuff/:id', (req, res, next) => {
+    Thing.updateOne({_id: req.params.id}, {...req.body, _id: req.params.id})
+        .then(() => res.status(201).json({message: 'Objet modifié'}))
+        .catch(error => res.status(400).json({error}));
+});
 
-    const stuff = [{
-        _id: 'kezoakeoza',
-        title: '1er objet',
-        description: 'Infos du 1er objet',
-        imageUrl: '',
-        price: 1500,
-        userId: 'DZZAD'
-    },
-        {
-            _id: 'kze',
-            title: '3eme objet',
-            description: 'Infos du 3eme objet',
-            imageUrl: '',
-            price: 88000,
-            userId: 'ezaeD'
-        },
-        {
-            _id: 'koolllldddq',
-            title: '2eme objet',
-            description: 'Infos du 2eme objet',
-            imageUrl: '',
-            price: 750,
-            userId: 'Djkeezoap'
-        },
-    ];
-    res.status(200).json(stuff);
+app.delete('/api/stuff/:id', (req, res, next) => {
+    Thing.deleteOne({_id: req.params.id})
+        .then(() => res.status(201).json({message: 'Objet supprimé'}))
+        .catch(error => res.status(400).json({error}));
+});
+
+app.get('/api/stuff/:id', ((req, res, next) => {
+    Thing.findOne({_id: req.params.id})
+        .then(thing => res.status(200).json(thing))
+        .catch(error => res.status(404).json({error}));
+}));
+
+app.get('/api/stuff', ((req, res, next) => {
+    Thing.find()
+        .then(things => res.status(200).json(things))
+        .catch(error => res.status(400).json({error}));
 }))
 
 
